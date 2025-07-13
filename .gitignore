@@ -1,3 +1,10 @@
+#Build directories
+Debug/
+.vs/
+Release/
+x64/
+x86/
+
 # Prerequisites
 *.d
 

@@ -8,7 +8,11 @@
 using namespace std;
 using namespace std::chrono;
 
-//шаблонный класс для рисования объектов
+//интерфейс для рисования элементов окна
+class Drawable {
+public:
+    virtual void draw() = 0;
+};
 
 struct vector2d {
     int x = 0;
@@ -17,35 +21,32 @@ struct vector2d {
 
 bool game_exit = false;
 
-class Apple {
+class Apple : public Drawable{
 public:
     Apple() {}
 
-    Apple(const vector2d startCords, int color) : cords(startCords), numberOfColorPair(color) {}
+    Apple(const vector2d& startCords, int color) : cords(startCords), numberOfColorPair(color) {}
 
-    void drawInTheMap() {
+    void draw() override {
         move(cords.x, cords.y);
         attrset(A_BOLD | COLOR_PAIR(numberOfColorPair));
         printw("@");
     }
 
-    vector2d getCords() {
-        return cords;
+
+    void setCords(const vector2d& value) {
+        cords = value;
     }
 
-    void setCords(vector2d value) {
-        cords.x = value.x;
-        cords.y = value.y;
-        //cords = value;
-    }
+    void placeInNewLocation() {
+        char s = ' ';
+        do {
+            cords = getRandomCords();
+            move(cords.x, cords.y);
+            auto s = static_cast<char>(winch(stdscr));
 
-    static vector2d getRandomCords() {
-        default_random_engine rand(static_cast<unsigned int>(system_clock::now().time_since_epoch().count()));
-        uniform_int_distribution<int> apple_x(4, 26);
-        uniform_int_distribution<int> apple_y(5, 109);
-
-
-        return {apple_x(rand), apple_y(rand)};
+        } while (s == '#');
+        
     }
 
     Apple(const Apple& _apple) {
@@ -55,23 +56,31 @@ public:
     }
 
 private:
+    static vector2d getRandomCords() {
+        default_random_engine rand(static_cast<unsigned int>(system_clock::now().time_since_epoch().count()));
+        uniform_int_distribution<int> apple_x(5, 26);
+        uniform_int_distribution<int> apple_y(6, 109);
+
+
+        return { apple_x(rand), apple_y(rand) };
+    }
+
+
     vector2d cords;
     int numberOfColorPair;
 
 };
 
-class Snake {
+class Snake : public Drawable {
 public:
     Snake() {}
 
     //rewrite (must work base)
-    Snake(const vector2d startCords, const Apple& _apple) {
-        head.x = startCords.x;
-        head.y = startCords.y;
-        this->apple = _apple;
+    Snake(const vector2d& startCords) : head(startCords) {
         
     }
-    void next() {
+
+    void draw() override {
         attrset(A_BOLD | COLOR_PAIR(3));
 
         if (!tail.empty()) {
@@ -81,110 +90,179 @@ public:
             }
         }
 
-        head.x += step.x; // operator +=
-        head.y += step.y;
-
         move(head.x, head.y);
+        printw("$");
+    }
+
+    char checkNext() {
+        move(head.x + step.x, head.y + step.y);
         auto s = static_cast<char>(winch(stdscr));
 
-        if (s == '*' || s == '#') {
-            attrset(A_BOLD | COLOR_PAIR(4));
-            move(13, 55);
-            printw("Конец игры");
-            move(14, 42);
-            printw("Выход - < q >  Начать заново - < n >");
+        return s;
+        
+    }
 
-            do {
-                if (getch() == 'q') {
-                    game_exit = true;
-                    return;
-                    
-                }
-                if (getch() == 'n') {
-                    //начальные значения
-                    head = { 10,10 };
-                    step = { 0, 1 };
-                    tail.clear();
-                    apple.setCords({15, 15});
-                    eaten_apples = 0;
-                    
-                }
-            
-            } while (true);
-
-        }
-        if (s == '@') {
-            eaten_apples++;
+    void stepForward() {
+        if (!tail.empty()) {
+            tail.erase(tail.begin());
             tail.push_back({ head.x, head.y });
-            do {
-                apple.setCords(Apple::getRandomCords());
-                move(apple.getCords().x, apple.getCords().y);
-                auto s = static_cast<char>(winch(stdscr));
-            
-            } while (s == '#');
-        
         }
-        else {
-            printw("$");
-            //update tail snake
-            if (!tail.empty()) {
-                tail.erase(tail.begin());
-                tail.push_back({ head.x, head.y });
-            }    
-        }
-        
+    }
+
+    void addStep() {
+        head.x += step.x;
+        head.y += step.y;
     }
 
     int getEatenApples() { return eaten_apples; }
 
-    vector2d getStep() {
-        return this->step;
+    void eatApple() { 
+        eaten_apples++; 
+        tail.push_back({ head.x, head.y });
+    
     }
 
-    void setStep(vector2d value) {
+    vector2d getStep() {
+        return step;
+    }
+
+    void setStep(const vector2d& value) {
         step.x = value.x;
         step.y = value.y;
     }
 
-    Apple& getApple() {
-        return apple;
-    }
+    //Apple& getApple() {
+    //    return apple;
+    //}
 
-    void drawInTheMap() {
-        attrset(A_BOLD | COLOR_PAIR(3));
-
-        if (!tail.empty()) {
-            for (const auto& part : tail) {
-                move(part.x, part.y);
-                printw("#");
-            }
-        } 
-
-        move(head.x, head.y);
-        printw("$");
-
+    void reset() {
+        head = { 10, 10 };
+        tail.clear();
+        eaten_apples = 0;
+        step = { 0, 1 };
+        //apple.setCords({ 10, 15 });
     }
 
 private:
     vector2d head = {10, 10};
     vector<vector2d> tail;
-    vector2d step = { 0, 1 }; // x, y
-    Apple apple;
+    vector2d step = { 0, 1 }; // 1-vertical, 2-horizontal
     int eaten_apples = 0;
 
 };
 
+class Border : public Drawable {
+public:
+    Border() {}
+    Border(int x1, int x2, int y1, int y2) : x({ x1, x2 }), y({ y1, y2 }) {}
+    Border(pair<int, int> _x, pair<int, int> _y) : x(_x), y(_y) {}
+
+    void draw() override {
+        attrset(A_DIM | COLOR_PAIR(1));
+        for (auto& value : { y.first, y.second }) {
+            for (int _x = x.first; _x < x.second; _x++) {
+                move(value, _x);
+                printw("*");
+            }
+        }
+
+        for (auto& value : { x.first, x.second }) {
+            for (int _y = y.first; _y < y.second; _y++) {
+                move(_y, value);
+                printw("*");
+            }
+        }
+    }
+
+
+
+private:
+    pair<int, int> x;
+    pair<int, int> y;
+};
+
+class Interface  : public Drawable  {
+public:
+    Interface() {
+    }
+
+    void draw() override {
+        move(2, 55);
+        attrset(A_DIM | COLOR_PAIR(1)); //устанавливаются атрибуты для текста далее
+        printw("Змейка\t\t");
+        attrset(A_BOLD | COLOR_PAIR(5));
+        printw("Количество собранных яблок\t\t");
+        printw(to_string(eatenApples).c_str());
+        printw(" > ");
+    }
+
+    void endGame() {
+        attrset(A_BOLD | COLOR_PAIR(4));
+        move(13, 55);
+        printw("Конец игры");
+        move(14, 42);
+        printw("Выход - < q >  Начать заново - < n >");
+    }
+private:
+    int eatenApples = 0;
+    
+};
+
 class Game {
 public:
-    Game(int numberOfPlayer) : snake({ 10, 10 }, Apple({ 10, 15 }, 2)) {
+    Game(int numberOfPlayer) : snake({ 10, 10 }), apple({ 10, 15 }, 2), border({ 5, 112 }, { 4, 28 }) {
         applySettings();
+        elements.emplace_back(&snake);
+        elements.emplace_back(&apple);
+        elements.emplace_back(&border);
+        elements.emplace_back(&interface);
+
+    }
+
+    void updateFrame() {
+        clear();
+
+        for (const auto& x : elements) {
+            x->draw();
+
+        }
+
+    }
+
+    //rename
+    void updateStatus(const char s) {
+        if (s == '#' || s == '*') {
+            interface.endGame();
+            do {
+                if (getch() == 'q') {
+                    game_exit = true;
+                    return;
+
+                }
+                if (getch() == 'n') {
+                    snake.reset();
+                    return;
+                }
+
+            } while (true);
+            return;   
+        }
+        if (s == '@') {
+            snake.eatApple();
+            apple.placeInNewLocation();
+            return;
+        }
+        else {
+            snake.stepForward();
+        } 
+        snake.addStep();
     }
 
     void start() {  //стрелочки и бесконечный цикл
         while (!game_exit) {
             updateFrame();
-            snake.next();
-            timeout(170);
+            updateStatus(snake.checkNext());
+            timeout(150);
             switch (getch()) {
             case KEY_UP:
                 if (snake.getStep().x == 0) {
@@ -213,41 +291,9 @@ public:
                 game_exit = true;
                 break;
             }
-        }
-
-
-    
+        }    
     }
 
-    void updateFrame() {
-        clear();
-        move(2, 55);
-
-        attrset(A_DIM | COLOR_PAIR(1)); //устанавливаются атрибуты для текста далее
-        printw("Змейка\t\t");
-        attrset(A_BOLD | COLOR_PAIR(5));
-        printw("Количество собранных яблок\t\t");
-        printw(to_string(snake.getEatenApples()).c_str());
-        printw(" > ");
-
-        //Border (Граница)
-        attrset(A_DIM | COLOR_PAIR(1));
-        for (auto& value : { 4, 27 }) {
-            for (int x = 5; x < 112; x++) {
-                move(value, x);
-                printw("*");
-            }
-        }
-
-        for (auto& value : { 5, 112 }) {
-            for (int y = 4; y < 28; y++) {
-                move(y, value);
-                printw("*");
-            }
-        }
-
-        snake.getApple().drawInTheMap();
-    }
 
     ~Game() {
         endwin();
@@ -256,12 +302,12 @@ public:
 
 private:
     void applySettings() {
-        system("chcp 1251");
+        system("chcp 1251"); //enabling russian symbols
 
         initscr();
         curs_set(0);
-        start_color();
 
+        start_color();
         init_pair(1, COLOR_WHITE, COLOR_BLUE);  //background
         init_pair(2, COLOR_MAGENTA, COLOR_BLUE); //apple
         init_pair(3, COLOR_GREEN, COLOR_BLUE);  //snake
@@ -273,15 +319,19 @@ private:
         keypad(stdscr, true); //возможность использовать клавиатуру
         noecho();
     }
+
     Snake snake;
-    //int colorBkgd;  //потом попробовать
+    Apple apple;
+    Border border;
+    Interface interface;
+    vector<Drawable*> elements;
+
 };
 
 int main()
 {
     Game game(1);
     game.start();
-
 
 }
 

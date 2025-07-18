@@ -75,7 +75,6 @@ class Snake : public Drawable {
 public:
     Snake() {}
 
-    //rewrite (must work base)
     Snake(const vector2d& startCords) : head(startCords) {
         
     }
@@ -131,16 +130,11 @@ public:
         step.y = value.y;
     }
 
-    //Apple& getApple() {
-    //    return apple;
-    //}
-
     void reset() {
         head = { 10, 10 };
         tail.clear();
         eaten_apples = 0;
         step = { 0, 1 };
-        //apple.setCords({ 10, 15 });
     }
 
 private:

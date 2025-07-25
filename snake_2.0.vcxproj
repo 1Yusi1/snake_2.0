@@ -146,7 +146,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Apple.cpp" />
+    <ClCompile Include="Border.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Interface.cpp" />
+    <ClCompile Include="Snake.cpp" />
     <ClCompile Include="snake_2.0.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Apple.h" />
+    <ClInclude Include="Border.h" />
+    <ClInclude Include="DisplayManager.h" />
+    <ClInclude Include="Drawable.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="Interface.h" />
+    <ClInclude Include="Snake.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

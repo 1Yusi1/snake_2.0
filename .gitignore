@@ -1,6 +1,7 @@
 #Build directories
 Debug/
 .vs/
+.vscode/
 Release/
 x64/
 x86/
@@ -46,3 +47,5 @@ x86/
 
 # debug information files
 *.dwo
+
+*.json

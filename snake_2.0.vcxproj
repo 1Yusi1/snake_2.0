@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="Apple.h" />
     <ClInclude Include="Border.h" />
+    <ClInclude Include="Config.h" />
     <ClInclude Include="DisplayManager.h" />
     <ClInclude Include="Drawable.h" />
     <ClInclude Include="Game.h" />

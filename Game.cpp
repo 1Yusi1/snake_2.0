@@ -1,9 +1,12 @@
 #include "Game.h"
+#include "Config.h"
+
 
 bool game_exit = 0;
 
 Game::Game(int numberOfPlayer) : apple({ 10, 15 }, 2), border({ 5, 112 }, { 4, 28 }) {
     applySettings();
+    Config config;
 
     snakes.emplace_back(Snake({ 10, 10 }, { 0, 1 }));
     if (numberOfPlayer == 2) {
@@ -14,7 +17,7 @@ Game::Game(int numberOfPlayer) : apple({ 10, 15 }, 2), border({ 5, 112 }, { 4, 2
     elements.emplace_back(&border);
     elements.emplace_back(&interface);
     for (auto& x : snakes) {
-        elements.emplace_back(&x);
+        elements.emplace_back(&x);  
     }
 
 }
